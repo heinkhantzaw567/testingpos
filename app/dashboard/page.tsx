@@ -6,7 +6,6 @@ import {
   Package, 
   Users, 
   TrendingUp, 
-  Calendar,
   Clock,
   AlertCircle
 } from "lucide-react";
@@ -48,7 +47,7 @@ export default async function DashboardPage() {
           Welcome back, {data.user.email?.split('@')[0] || 'Admin'}! 👋
         </h1>
         <p className="text-gray-600">
-          Here's what's happening with Hein Khant Zaw POS system today.
+          Here&apos;s what&apos;s happening with Hein Khant Zaw POS system today.
         </p>
       </div>
 
@@ -57,7 +56,7 @@ export default async function DashboardPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Today's Sales</p>
+              <p className="text-sm font-medium text-gray-600">Today&apos;s Sales</p>
               <p className="text-2xl font-bold text-gray-900">
                 {dashboardData.todaySales.toLocaleString()} MMK
               </p>
@@ -78,7 +77,7 @@ export default async function DashboardPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Today's Orders</p>
+              <p className="text-sm font-medium text-gray-600">Today&apos;s Orders</p>
               <p className="text-2xl font-bold text-gray-900">
                 {dashboardData.todayOrders}
               </p>

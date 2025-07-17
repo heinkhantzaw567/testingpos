@@ -37,12 +37,12 @@ const navigationItems = [
   },
   {
     name: "Vendors",
-    href: "/vendors",
+    href: "/dashboard/vendors",
     icon: Building2,
   },
   {
     name: "Settings",
-    href: "/settings",
+    href: "/dashboard/settings",
     icon: Settings,
   },
 ];

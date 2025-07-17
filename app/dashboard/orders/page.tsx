@@ -10,7 +10,6 @@ import {
   Edit, 
   Trash2, 
   Download,
-  Calendar,
   DollarSign,
   Clock,
   User,
@@ -18,33 +17,7 @@ import {
   MapPin,
   Package
 } from "lucide-react";
-
-// Types
-type OrderStatus = "completed" | "pending" | "processing" | "cancelled";
-
-interface OrderItem {
-  name: string;
-  quantity: number;
-  price: number;
-}
-
-interface Customer {
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-}
-
-interface Order {
-  id: string;
-  customer: Customer;
-  items: OrderItem[];
-  total: number;
-  status: OrderStatus;
-  paymentMethod: string;
-  date: string;
-  time: string;
-}
+import { OrderStatus, Order, NewOrderData, OrderItem } from "@/types/order";
 
 // Mock orders data - in a real app, this would come from your database
 const mockOrders: Order[] = [
@@ -178,14 +151,14 @@ export default function OrdersPage() {
     ));
   };
 
-  const handleNewOrder = (orderData: any) => {
+  const handleNewOrder = (orderData: NewOrderData) => {
     // Generate new order ID
     const newOrderId = `ORD-${String(orders.length + 1).padStart(3, '0')}`;
     
     const newOrder: Order = {
       id: newOrderId,
       customer: orderData.customer,
-      items: orderData.items.map((item: any) => ({
+      items: orderData.items.map((item: OrderItem) => ({
         name: item.product.name,
         quantity: item.quantity,
         price: item.product.price

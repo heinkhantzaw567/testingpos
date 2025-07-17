@@ -5,7 +5,6 @@ import {
   X, 
   Plus, 
   Minus, 
-  Search, 
   User, 
   Package, 
   DollarSign,
@@ -13,38 +12,12 @@ import {
   Trash2,
   Save
 } from "lucide-react";
-
-// Types
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  stock: number;
-  category: string;
-}
-
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-}
-
-interface OrderItem {
-  product: Product;
-  quantity: number;
-  subtotal: number;
-}
-
-interface NewOrderFormProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (orderData: any) => void;
-}
+import { SimpleProduct } from "@/types/product";
+import { SimpleCustomer } from "@/types/customer";
+import { OrderItem, NewOrderFormProps } from "@/types/order";
 
 // Mock data - in a real app, this would come from your database
-const mockProducts: Product[] = [
+const mockProducts: SimpleProduct[] = [
   { id: "1", name: "Wireless Headphones", price: 79.99, stock: 25, category: "Electronics" },
   { id: "2", name: "Phone Case", price: 24.99, stock: 50, category: "Accessories" },
   { id: "3", name: "Bluetooth Speaker", price: 125.00, stock: 15, category: "Electronics" },
@@ -55,7 +28,7 @@ const mockProducts: Product[] = [
   { id: "8", name: "Monitor Stand", price: 42.99, stock: 18, category: "Office" }
 ];
 
-const mockCustomers: Customer[] = [
+const mockCustomers: SimpleCustomer[] = [
   { id: "1", name: "John Doe", email: "john.doe@email.com", phone: "+1 234-567-8901", address: "123 Main St, New York, NY 10001" },
   { id: "2", name: "Jane Smith", email: "jane.smith@email.com", phone: "+1 234-567-8902", address: "456 Oak Ave, Los Angeles, CA 90210" },
   { id: "3", name: "Mike Johnson", email: "mike.j@email.com", phone: "+1 234-567-8903", address: "789 Pine St, Chicago, IL 60601" },
@@ -64,7 +37,7 @@ const mockCustomers: Customer[] = [
 ];
 
 export default function NewOrderForm({ isOpen, onClose, onSubmit }: NewOrderFormProps) {
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<SimpleCustomer | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [productSearch, setProductSearch] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
@@ -72,7 +45,7 @@ export default function NewOrderForm({ isOpen, onClose, onSubmit }: NewOrderForm
   const [notes, setNotes] = useState("");
   const [showProductList, setShowProductList] = useState(false);
   const [showCustomerList, setShowCustomerList] = useState(false);
-  const [selectedProductToAdd, setSelectedProductToAdd] = useState<Product | null>(null);
+  const [selectedProductToAdd, setSelectedProductToAdd] = useState<SimpleProduct | null>(null);
   const [quantityToAdd, setQuantityToAdd] = useState(1);
   
   // Tax and Discount states
@@ -94,7 +67,7 @@ export default function NewOrderForm({ isOpen, onClose, onSubmit }: NewOrderForm
     customer.phone.includes(customerSearch)
   );
 
-  const selectProductToAdd = (product: Product) => {
+  const selectProductToAdd = (product: SimpleProduct) => {
     setSelectedProductToAdd(product);
     setQuantityToAdd(1);
     setProductSearch(product.name);
@@ -450,7 +423,10 @@ export default function NewOrderForm({ isOpen, onClose, onSubmit }: NewOrderForm
                   max="100"
                   step="0.1"
                   value={taxRate}
-                  onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setTaxRate(value === "" ? 0 : parseFloat(value) || 0);
+                  }}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="8.0"
                 />
@@ -483,7 +459,10 @@ export default function NewOrderForm({ isOpen, onClose, onSubmit }: NewOrderForm
                       max={discountType === "percentage" ? 100 : calculateTotal()}
                       step={discountType === "percentage" ? "0.1" : "0.01"}
                       value={discountValue}
-                      onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setDiscountValue(value === "" ? 0 : parseFloat(value) || 0);
+                      }}
                       className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       placeholder={discountType === "percentage" ? "10" : "5.00"}
                     />

@@ -10,31 +10,9 @@ import {
   FileText,
   Tag,
   User,
-  Calendar,
-  Image as ImageIcon,
-  Upload
+  Image as ImageIcon
 } from "lucide-react";
-
-// Types
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  stock: number;
-  category: string;
-  description: string;
-  sku: string;
-  status: "active" | "inactive" | "low-stock";
-  dateAdded: string;
-  supplier: string;
-  image?: string;
-}
-
-interface AddProductFormProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (productData: Omit<Product, 'id' | 'dateAdded'>) => void;
-}
+import { AddProductFormProps } from "@/types/product";
 
 const categories = ["Electronics", "Accessories", "Office", "Computer", "Clothing", "Books", "Home & Garden"];
 const suppliers = ["TechCorp", "AccessoryPro", "OfficePro", "CableCo", "SupplierA", "SupplierB"];
@@ -90,11 +68,11 @@ export default function AddProductForm({ isOpen, onClose, onSubmit }: AddProduct
       newErrors.name = "Product name is required";
     }
 
-    if (!formData.price || parseFloat(formData.price) <= 0) {
+    if (!formData.price || isNaN(parseFloat(formData.price)) || parseFloat(formData.price) <= 0) {
       newErrors.price = "Valid price is required";
     }
 
-    if (!formData.stock || parseInt(formData.stock) < 0) {
+    if (!formData.stock || isNaN(parseInt(formData.stock)) || parseInt(formData.stock) < 0) {
       newErrors.stock = "Valid stock quantity is required";
     }
 
@@ -131,8 +109,8 @@ export default function AddProductForm({ isOpen, onClose, onSubmit }: AddProduct
       // Prepare product data
       const productData = {
         name: formData.name.trim(),
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
+        price: formData.price === "" ? 0 : parseFloat(formData.price) || 0,
+        stock: formData.stock === "" ? 0 : parseInt(formData.stock) || 0,
         category: formData.category,
         description: formData.description.trim(),
         sku: formData.sku.trim().toUpperCase(),

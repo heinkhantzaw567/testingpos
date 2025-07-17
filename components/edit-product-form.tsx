@@ -12,28 +12,7 @@ import {
   User,
   Image as ImageIcon
 } from "lucide-react";
-
-// Types
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  stock: number;
-  category: string;
-  description: string;
-  sku: string;
-  status: "active" | "inactive" | "low-stock";
-  dateAdded: string;
-  supplier: string;
-  image?: string;
-}
-
-interface EditProductFormProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (productData: Product) => void;
-  product: Product | null;
-}
+import { Product, EditProductFormProps } from "@/types/product";
 
 const categories = ["Electronics", "Accessories", "Office", "Computer", "Clothing", "Books", "Home & Garden"];
 const suppliers = ["TechCorp", "AccessoryPro", "OfficePro", "CableCo", "SupplierA", "SupplierB"];
@@ -68,14 +47,23 @@ export default function EditProductForm({ isOpen, onClose, onSubmit, product }: 
         supplier: product.supplier,
         image: product.image || ""
       });
+      setErrors({}); // Clear any existing errors
     }
   }, [product]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    
+    // Handle numeric fields properly to allow editing
+    let processedValue = value;
+    if (name === 'price' || name === 'stock') {
+      // Allow empty string for editing, accept any valid numeric input
+      processedValue = value;
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: processedValue
     }));
     
     // Clear error when user starts typing
@@ -94,11 +82,11 @@ export default function EditProductForm({ isOpen, onClose, onSubmit, product }: 
       newErrors.name = "Product name is required";
     }
 
-    if (!formData.price || parseFloat(formData.price) <= 0) {
+    if (!formData.price || isNaN(parseFloat(formData.price)) || parseFloat(formData.price) <= 0) {
       newErrors.price = "Valid price is required";
     }
 
-    if (!formData.stock || parseInt(formData.stock) < 0) {
+    if (!formData.stock || isNaN(parseInt(formData.stock)) || parseInt(formData.stock) < 0) {
       newErrors.stock = "Valid stock quantity is required";
     }
 
@@ -136,8 +124,8 @@ export default function EditProductForm({ isOpen, onClose, onSubmit, product }: 
       const updatedProduct: Product = {
         ...product,
         name: formData.name.trim(),
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
+        price: formData.price === "" ? 0 : parseFloat(formData.price) || 0,
+        stock: formData.stock === "" ? 0 : parseInt(formData.stock) || 0,
         category: formData.category,
         description: formData.description.trim(),
         sku: formData.sku.trim().toUpperCase(),
@@ -239,6 +227,7 @@ export default function EditProductForm({ isOpen, onClose, onSubmit, product }: 
                   value={formData.stock}
                   onChange={handleInputChange}
                   min="0"
+                  step="1"
                   className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
                     errors.stock ? 'border-red-500' : 'border-gray-300'
                   }`}

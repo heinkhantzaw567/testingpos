@@ -8,7 +8,6 @@ import {
   Tag,
   User,
   Calendar,
-  Image as ImageIcon,
   Eye,
   Archive,
   AlertTriangle

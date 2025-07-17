@@ -19,26 +19,8 @@ import {
   CreditCard,
   Wallet
 } from "lucide-react";
-
-// Types
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  totalOrders: number;
-  totalSpent: number;
-  lastOrderDate: string;
-  status: "active" | "inactive" | "vip";
-  dateAdded: string;
-  loyaltyPoints: number;
-  creditBalance: number;
-  avatar?: string;
-}
+import AddCustomerForm from "@/components/add-customer-form";
+import { Customer, CustomerFormData } from "@/types/customer";
 
 // Mock data - in a real app, this would come from your database
 const mockCustomers: Customer[] = [
@@ -49,7 +31,6 @@ const mockCustomers: Customer[] = [
     phone: "+1 (555) 123-4567",
     address: "123 Main St",
     city: "New York",
-    state: "NY",
     zipCode: "10001",
     totalOrders: 15,
     totalSpent: 1250.75,
@@ -66,7 +47,6 @@ const mockCustomers: Customer[] = [
     phone: "+1 (555) 987-6543",
     address: "456 Oak Ave",
     city: "Los Angeles",
-    state: "CA",
     zipCode: "90210",
     totalOrders: 8,
     totalSpent: 645.20,
@@ -83,7 +63,6 @@ const mockCustomers: Customer[] = [
     phone: "+1 (555) 456-7890",
     address: "789 Pine St",
     city: "Chicago",
-    state: "IL",
     zipCode: "60601",
     totalOrders: 25,
     totalSpent: 2150.00,
@@ -100,7 +79,6 @@ const mockCustomers: Customer[] = [
     phone: "+1 (555) 321-0987",
     address: "321 Elm St",
     city: "Miami",
-    state: "FL",
     zipCode: "33101",
     totalOrders: 3,
     totalSpent: 187.50,
@@ -117,7 +95,6 @@ const mockCustomers: Customer[] = [
     phone: "+1 (555) 654-3210",
     address: "654 Maple Dr",
     city: "Seattle",
-    state: "WA",
     zipCode: "98101",
     totalOrders: 12,
     totalSpent: 890.25,
@@ -134,7 +111,6 @@ const mockCustomers: Customer[] = [
     phone: "+1 (555) 789-0123",
     address: "987 Cedar Ln",
     city: "Boston",
-    state: "MA",
     zipCode: "02101",
     totalOrders: 7,
     totalSpent: 520.80,
@@ -147,19 +123,17 @@ const mockCustomers: Customer[] = [
 ];
 
 const statusOptions = ["All", "Active", "Inactive", "VIP"];
-const stateOptions = ["All", "NY", "CA", "IL", "FL", "WA", "MA"];
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>(mockCustomers);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
-  const [selectedState, setSelectedState] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  // const [showEditForm, setShowEditForm] = useState(false);
+  // const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCreditModal, setShowCreditModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [creditAmount, setCreditAmount] = useState("");
@@ -171,8 +145,7 @@ export default function CustomersPage() {
                          customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          customer.phone.includes(searchTerm);
     const matchesStatus = selectedStatus === "All" || customer.status === selectedStatus.toLowerCase();
-    const matchesState = selectedState === "All" || customer.state === selectedState;
-    return matchesSearch && matchesStatus && matchesState;
+    return matchesSearch && matchesStatus;
   });
 
   const getStatusColor = (status: string) => {
@@ -222,12 +195,16 @@ export default function CustomersPage() {
 
   const handleEditCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
-    setShowEditForm(true);
+    // TODO: Implement edit customer functionality
+    // setShowEditForm(true);
+    console.log('Edit customer:', customer.name);
   };
 
   const handleDeleteCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
-    setShowDeleteModal(true);
+    // TODO: Implement delete customer functionality  
+    // setShowDeleteModal(true);
+    console.log('Delete customer:', customer.name);
   };
 
   const handleManageCredit = (customer: Customer) => {
@@ -259,6 +236,28 @@ export default function CustomersPage() {
     setCreditOperation("add");
   };
 
+  const handleAddCustomer = (customerData: CustomerFormData) => {
+    const newCustomer: Customer = {
+      id: (customers.length + 1).toString(),
+      name: customerData.name,
+      email: customerData.email,
+      phone: customerData.phone,
+      address: customerData.address,
+      city: customerData.city,
+      zipCode: customerData.zipCode,
+      totalOrders: 0,
+      totalSpent: 0,
+      lastOrderDate: "Never",
+      status: customerData.status,
+      dateAdded: new Date().toISOString().split('T')[0],
+      loyaltyPoints: 0,
+      creditBalance: customerData.creditBalance || 0
+    };
+
+    setCustomers(prev => [...prev, newCustomer]);
+    setShowAddForm(false);
+  };
+
   const handleBulkDelete = () => {
     if (selectedCustomers.length === 0) return;
     
@@ -273,9 +272,9 @@ export default function CustomersPage() {
     
     const selectedData = customers.filter(c => selectedCustomers.includes(c.id));
     const csvContent = "data:text/csv;charset=utf-8," + 
-      "Name,Email,Phone,Address,City,State,ZIP,Total Orders,Total Spent,Status\n" +
+      "Name,Email,Phone,Address,City,ZIP,Total Orders,Total Spent,Status\n" +
       selectedData.map(c => 
-        `"${c.name}","${c.email}","${c.phone}","${c.address}","${c.city}","${c.state}","${c.zipCode}",${c.totalOrders},${c.totalSpent},"${c.status}"`
+        `"${c.name}","${c.email}","${c.phone}","${c.address}","${c.city}","${c.zipCode}",${c.totalOrders},${c.totalSpent},"${c.status}"`
       ).join("\n");
 
     const encodedUri = encodeURI(csvContent);
@@ -322,7 +321,7 @@ export default function CustomersPage() {
             <div className="ml-4">
               <p className="text-sm text-gray-600">Total Revenue</p>
               <p className="text-2xl font-bold text-gray-900">
-                ${customers.reduce((sum, c) => sum + c.totalSpent, 0).toLocaleString()}
+                ${customers.reduce((sum, c) => sum + (c.totalSpent || 0), 0).toLocaleString()}
               </p>
             </div>
           </div>
@@ -388,17 +387,6 @@ export default function CustomersPage() {
           >
             {statusOptions.map(status => (
               <option key={status} value={status}>{status}</option>
-            ))}
-          </select>
-
-          {/* State Filter */}
-          <select
-            value={selectedState}
-            onChange={(e) => setSelectedState(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            {stateOptions.map(state => (
-              <option key={state} value={state}>{state === "All" ? "All States" : state}</option>
             ))}
           </select>
 
@@ -557,18 +545,18 @@ export default function CustomersPage() {
                     <div className="text-sm text-gray-900">
                       <div className="flex items-center">
                         <MapPin className="h-3 w-3 text-gray-400 mr-1" />
-                        {customer.city}, {customer.state}
+                        {customer.city}
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
                     <div className="font-medium">{customer.totalOrders}</div>
                     <div className="text-xs text-gray-500">
-                      Last: {new Date(customer.lastOrderDate).toLocaleDateString()}
+                      Last: {customer.lastOrderDate ? new Date(customer.lastOrderDate).toLocaleDateString() : 'Never'}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                    ${customer.totalSpent.toLocaleString()}
+                    ${(customer.totalSpent || 0).toLocaleString()}
                     <div className="text-xs text-gray-500">
                       {customer.loyaltyPoints} points
                     </div>
@@ -681,22 +669,12 @@ export default function CustomersPage() {
         </div>
       )}
 
-      {/* TODO: Add Customer Modal Forms */}
-      {/* These would be similar to the product forms but for customer data */}
-      {showAddForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-medium mb-4">Add Customer</h3>
-            <p className="text-gray-600 mb-4">Customer form will be implemented here</p>
-            <button 
-              onClick={() => setShowAddForm(false)}
-              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Add Customer Form */}
+      <AddCustomerForm
+        isOpen={showAddForm}
+        onClose={() => setShowAddForm(false)}
+        onSubmit={handleAddCustomer}
+      />
 
       {showDetailsModal && selectedCustomer && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
