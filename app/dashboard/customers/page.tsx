@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Plus, 
   Search, 
@@ -8,169 +8,69 @@ import {
   Edit, 
   Trash2, 
   Users,
+  User,
   DollarSign,
   Phone,
   Mail,
   MapPin,
   Eye,
   MoreHorizontal,
-  UserCheck,
-  Star,
   CreditCard,
-  Wallet
+  Wallet,
+  X
 } from "lucide-react";
 import AddCustomerForm from "@/components/add-customer-form";
+import EditCustomerForm from "@/components/edit-customer-form";
 import { Customer, CustomerFormData } from "@/types/customer";
 
-// Mock data - in a real app, this would come from your database
-const mockCustomers: Customer[] = [
-  {
-    id: "1",
-    name: "John Smith",
-    email: "john.smith@email.com",
-    phone: "+1 (555) 123-4567",
-    address: "123 Main St",
-    city: "New York",
-    zipCode: "10001",
-    totalOrders: 15,
-    totalSpent: 1250.75,
-    lastOrderDate: "2024-03-15",
-    status: "vip",
-    dateAdded: "2023-01-15",
-    loyaltyPoints: 125,
-    creditBalance: 50.00
-  },
-  {
-    id: "2",
-    name: "Sarah Johnson",
-    email: "sarah.j@email.com",
-    phone: "+1 (555) 987-6543",
-    address: "456 Oak Ave",
-    city: "Los Angeles",
-    zipCode: "90210",
-    totalOrders: 8,
-    totalSpent: 645.20,
-    lastOrderDate: "2024-03-10",
-    status: "active",
-    dateAdded: "2023-05-20",
-    loyaltyPoints: 64,
-    creditBalance: 25.50
-  },
-  {
-    id: "3",
-    name: "Michael Brown",
-    email: "m.brown@email.com",
-    phone: "+1 (555) 456-7890",
-    address: "789 Pine St",
-    city: "Chicago",
-    zipCode: "60601",
-    totalOrders: 25,
-    totalSpent: 2150.00,
-    lastOrderDate: "2024-03-12",
-    status: "vip",
-    dateAdded: "2022-11-05",
-    loyaltyPoints: 215,
-    creditBalance: 100.00
-  },
-  {
-    id: "4",
-    name: "Emily Davis",
-    email: "emily.davis@email.com",
-    phone: "+1 (555) 321-0987",
-    address: "321 Elm St",
-    city: "Miami",
-    zipCode: "33101",
-    totalOrders: 3,
-    totalSpent: 187.50,
-    lastOrderDate: "2024-02-28",
-    status: "active",
-    dateAdded: "2024-01-10",
-    loyaltyPoints: 18,
-    creditBalance: 0.00
-  },
-  {
-    id: "5",
-    name: "David Wilson",
-    email: "d.wilson@email.com",
-    phone: "+1 (555) 654-3210",
-    address: "654 Maple Dr",
-    city: "Seattle",
-    zipCode: "98101",
-    totalOrders: 12,
-    totalSpent: 890.25,
-    lastOrderDate: "2024-01-15",
-    status: "inactive",
-    dateAdded: "2023-08-12",
-    loyaltyPoints: 89,
-    creditBalance: 15.75
-  },
-  {
-    id: "6",
-    name: "Lisa Anderson",
-    email: "lisa.a@email.com",
-    phone: "+1 (555) 789-0123",
-    address: "987 Cedar Ln",
-    city: "Boston",
-    zipCode: "02101",
-    totalOrders: 7,
-    totalSpent: 520.80,
-    lastOrderDate: "2024-03-08",
-    status: "active",
-    dateAdded: "2023-12-01",
-    loyaltyPoints: 52,
-    creditBalance: 35.25
-  }
-];
-
-const statusOptions = ["All", "Active", "Inactive", "VIP"];
-
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<Customer[]>(mockCustomers);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  // const [showEditForm, setShowEditForm] = useState(false);
-  // const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCreditModal, setShowCreditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [creditAmount, setCreditAmount] = useState("");
   const [creditOperation, setCreditOperation] = useState<"add" | "deduct">("add");
+
+  // Fetch customers from API
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch('/api/customers');
+      const result = await response.json();
+      
+      if (result.success) {
+        setCustomers(result.data || []);
+      } else {
+        setError(result.error || result.message || 'Failed to fetch customers');
+      }
+    } catch (err) {
+      setError('Failed to connect to API');
+      console.error('Error fetching customers:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter customers
   const filteredCustomers = customers.filter(customer => {
     const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          customer.phone.includes(searchTerm);
-    const matchesStatus = selectedStatus === "All" || customer.status === selectedStatus.toLowerCase();
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800";
-      case "inactive":
-        return "bg-red-100 text-red-800";
-      case "vip":
-        return "bg-purple-100 text-purple-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "vip":
-        return <Star className="h-4 w-4" />;
-      case "active":
-        return <UserCheck className="h-4 w-4" />;
-      default:
-        return <Users className="h-4 w-4" />;
-    }
-  };
 
   const handleSelectCustomer = (customerId: string) => {
     setSelectedCustomers(prev => 
@@ -195,16 +95,39 @@ export default function CustomersPage() {
 
   const handleEditCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
-    // TODO: Implement edit customer functionality
-    // setShowEditForm(true);
-    console.log('Edit customer:', customer.name);
+    setShowEditForm(true);
   };
 
   const handleDeleteCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
-    // TODO: Implement delete customer functionality  
-    // setShowDeleteModal(true);
-    console.log('Delete customer:', customer.name);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteCustomer = async () => {
+    if (!selectedCustomer) return;
+    
+    try {
+      setError(null);
+      const response = await fetch(`/api/customers/${selectedCustomer.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        await fetchCustomers();
+        setShowDeleteModal(false);
+        setSelectedCustomer(null);
+      } else {
+        setError(result.error || 'Failed to delete customer');
+      }
+    } catch (err) {
+      setError('Failed to connect to API');
+      console.error('Error deleting customer:', err);
+    }
   };
 
   const handleManageCredit = (customer: Customer) => {
@@ -212,57 +135,100 @@ export default function CustomersPage() {
     setShowCreditModal(true);
   };
 
-  const handleCreditSubmit = () => {
+  const handleCreditSubmit = async () => {
     if (!selectedCustomer || !creditAmount) return;
     
     const amount = parseFloat(creditAmount);
     if (isNaN(amount) || amount <= 0) return;
     
-    setCustomers(prev => 
-      prev.map(c => {
-        if (c.id === selectedCustomer.id) {
-          const newBalance = creditOperation === "add" 
-            ? c.creditBalance + amount 
-            : Math.max(0, c.creditBalance - amount);
-          return { ...c, creditBalance: newBalance };
-        }
-        return c;
-      })
-    );
-    
-    setShowCreditModal(false);
-    setSelectedCustomer(null);
-    setCreditAmount("");
-    setCreditOperation("add");
+    try {
+      setError(null);
+      const response = await fetch(`/api/customers/${selectedCustomer.id}/credit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount,
+          operation: creditOperation,
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        await fetchCustomers();
+        setShowCreditModal(false);
+        setSelectedCustomer(null);
+        setCreditAmount("");
+        setCreditOperation("add");
+      } else {
+        setError(result.error || 'Failed to update credit');
+      }
+    } catch (err) {
+      setError('Failed to connect to API');
+      console.error('Error updating credit:', err);
+    }
   };
 
-  const handleAddCustomer = (customerData: CustomerFormData) => {
-    const newCustomer: Customer = {
-      id: (customers.length + 1).toString(),
-      name: customerData.name,
-      email: customerData.email,
-      phone: customerData.phone,
-      address: customerData.address,
-      city: customerData.city,
-      zipCode: customerData.zipCode,
-      totalOrders: 0,
-      totalSpent: 0,
-      lastOrderDate: "Never",
-      status: customerData.status,
-      dateAdded: new Date().toISOString().split('T')[0],
-      loyaltyPoints: 0,
-      creditBalance: customerData.creditBalance || 0
-    };
+  const handleAddCustomer = async (customerData: CustomerFormData) => {
+    try {
+      setError(null);
+      const response = await fetch('/api/customers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(customerData),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        await fetchCustomers();
+        setShowAddForm(false);
+      } else {
+        setError(result.error || 'Failed to create customer');
+      }
+    } catch (err) {
+      setError('Failed to connect to API');
+      console.error('Error creating customer:', err);
+    }
+  };
 
-    setCustomers(prev => [...prev, newCustomer]);
-    setShowAddForm(false);
+  const handleUpdateCustomer = async (customerData: CustomerFormData) => {
+    if (!selectedCustomer) return;
+    
+    try {
+      setError(null);
+      const response = await fetch(`/api/customers/${selectedCustomer.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(customerData),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        await fetchCustomers();
+        setShowEditForm(false);
+        setSelectedCustomer(null);
+      } else {
+        setError(result.error || 'Failed to update customer');
+      }
+    } catch (err) {
+      setError('Failed to connect to API');
+      console.error('Error updating customer:', err);
+    }
   };
 
   const handleBulkDelete = () => {
     if (selectedCustomers.length === 0) return;
     
     if (confirm(`Are you sure you want to delete ${selectedCustomers.length} selected customers?`)) {
-      setCustomers(prev => prev.filter(c => !selectedCustomers.includes(c.id)));
+      // TODO: Implement bulk delete with API
       setSelectedCustomers([]);
     }
   };
@@ -272,9 +238,9 @@ export default function CustomersPage() {
     
     const selectedData = customers.filter(c => selectedCustomers.includes(c.id));
     const csvContent = "data:text/csv;charset=utf-8," + 
-      "Name,Email,Phone,Address,City,ZIP,Total Orders,Total Spent,Status\n" +
+      "Name,Email,Phone,Address,City,Total Orders,Total Spent\n" +
       selectedData.map(c => 
-        `"${c.name}","${c.email}","${c.phone}","${c.address}","${c.city}","${c.zipCode}",${c.totalOrders},${c.totalSpent},"${c.status}"`
+        `"${c.name}","${c.email}","${c.phone}","${c.address}","${c.city}",${c.totalOrders},${c.totalSpent}`
       ).join("\n");
 
     const encodedUri = encodeURI(csvContent);
@@ -285,6 +251,15 @@ export default function CustomersPage() {
     link.click();
     document.body.removeChild(link);
   };
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+        <p className="text-gray-500">Loading customers...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -302,6 +277,33 @@ export default function CustomersPage() {
           Add Customer
         </button>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="text-red-800">
+              <strong>Error:</strong> {error}
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-600 hover:text-red-800 text-xl"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Database Connection Message */}
+      {customers.length === 0 && !error && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="text-blue-800">
+            <strong>Database Setup Required:</strong> Your customer data will appear here once you connect to a database. 
+            The API is ready for integration with Supabase, PostgreSQL, or your preferred database solution.
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
@@ -341,11 +343,11 @@ export default function CustomersPage() {
         
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center">
-            <Star className="h-8 w-8 text-purple-600" />
+            <Users className="h-8 w-8 text-blue-600" />
             <div className="ml-4">
-              <p className="text-sm text-gray-600">VIP Customers</p>
+              <p className="text-sm text-gray-600">Average Orders</p>
               <p className="text-2xl font-bold text-gray-900">
-                {customers.filter(c => c.status === "vip").length}
+                {customers.length > 0 ? Math.round(customers.reduce((sum, c) => sum + c.totalOrders, 0) / customers.length) : 0}
               </p>
             </div>
           </div>
@@ -353,11 +355,11 @@ export default function CustomersPage() {
         
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center">
-            <UserCheck className="h-8 w-8 text-green-600" />
+            <CreditCard className="h-8 w-8 text-green-600" />
             <div className="ml-4">
-              <p className="text-sm text-gray-600">Active Customers</p>
+              <p className="text-sm text-gray-600">Average Spent</p>
               <p className="text-2xl font-bold text-gray-900">
-                {customers.filter(c => c.status === "active" || c.status === "vip").length}
+                ${customers.length > 0 ? (customers.reduce((sum, c) => sum + c.totalSpent, 0) / customers.length).toFixed(2) : '0.00'}
               </p>
             </div>
           </div>
@@ -367,7 +369,6 @@ export default function CustomersPage() {
       {/* Search and Filters */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search */}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <input
@@ -379,18 +380,6 @@ export default function CustomersPage() {
             />
           </div>
 
-          {/* Status Filter */}
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            {statusOptions.map(status => (
-              <option key={status} value={status}>{status}</option>
-            ))}
-          </select>
-
-          {/* Filter Toggle */}
           <button
             onClick={() => setShowFilters(!showFilters)}
             className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center"
@@ -399,54 +388,15 @@ export default function CustomersPage() {
             Filters
           </button>
         </div>
-
-        {/* Extended Filters */}
-        {showFilters && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Order Count</label>
-                <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                  <option value="">All</option>
-                  <option value="1-5">1-5 Orders</option>
-                  <option value="6-15">6-15 Orders</option>
-                  <option value="16+">16+ Orders</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Spending Range</label>
-                <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                  <option value="">All</option>
-                  <option value="0-500">$0 - $500</option>
-                  <option value="500-1000">$500 - $1,000</option>
-                  <option value="1000+">$1,000+</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Last Order</label>
-                <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                  <option value="">All Time</option>
-                  <option value="7days">Last 7 days</option>
-                  <option value="30days">Last 30 days</option>
-                  <option value="90days">Last 90 days</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Bulk Actions */}
       {selectedCustomers.length > 0 && (
         <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <span className="text-sm text-indigo-800">
-                {selectedCustomers.length} customer{selectedCustomers.length > 1 ? 's' : ''} selected
-              </span>
-            </div>
+            <span className="text-sm text-indigo-800">
+              {selectedCustomers.length} customer{selectedCustomers.length > 1 ? 's' : ''} selected
+            </span>
             <div className="flex items-center space-x-2">
               <button 
                 onClick={handleBulkExport}
@@ -467,207 +417,160 @@ export default function CustomersPage() {
 
       {/* Customers Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left">
-                  <input
-                    type="checkbox"
-                    checked={selectedCustomers.length === filteredCustomers.length && filteredCustomers.length > 0}
-                    onChange={handleSelectAll}
-                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                  />
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contact
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Location
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Orders
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total Spent
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Credit Balance
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredCustomers.map((customer) => (
-                <tr key={customer.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
+        {customers.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left">
                     <input
                       type="checkbox"
-                      checked={selectedCustomers.includes(customer.id)}
-                      onChange={() => handleSelectCustomer(customer.id)}
+                      checked={selectedCustomers.length === filteredCustomers.length && filteredCustomers.length > 0}
+                      onChange={handleSelectAll}
                       className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                     />
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center">
-                      <div className="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-sm font-medium text-indigo-600">
-                          {customer.name.split(' ').map(n => n[0]).join('')}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Customer
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Contact
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Location
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Orders
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total Spent
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Credit Balance
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredCustomers.map((customer) => (
+                  <tr key={customer.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedCustomers.includes(customer.id)}
+                        onChange={() => handleSelectCustomer(customer.id)}
+                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                          <span className="text-sm font-medium text-indigo-600">
+                            {customer.name.split(' ').map(n => n[0]).join('')}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{customer.name}</div>
+                          <div className="text-sm text-gray-500">Customer since {new Date(customer.dateAdded).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">
+                        <div className="flex items-center mb-1">
+                          <Mail className="h-3 w-3 text-gray-400 mr-1" />
+                          {customer.email}
+                        </div>
+                        <div className="flex items-center">
+                          <Phone className="h-3 w-3 text-gray-400 mr-1" />
+                          {customer.phone}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">
+                        <div className="flex items-center">
+                          <MapPin className="h-3 w-3 text-gray-400 mr-1" />
+                          {customer.city}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      <div className="font-medium">{customer.totalOrders}</div>
+                      <div className="text-xs text-gray-500">
+                        Last: {customer.lastOrderDate ? new Date(customer.lastOrderDate).toLocaleDateString() : 'Never'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                      ${(customer.totalSpent || 0).toLocaleString()}
+                      <div className="text-xs text-gray-500">
+                        {customer.loyaltyPoints} points
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                      <div className="flex items-center">
+                        <Wallet className="h-4 w-4 text-orange-500 mr-1" />
+                        <span className={customer.creditBalance > 0 ? "text-green-600" : "text-gray-500"}>
+                          ${customer.creditBalance.toFixed(2)}
                         </span>
                       </div>
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{customer.name}</div>
-                        <div className="text-sm text-gray-500">Customer since {new Date(customer.dateAdded).toLocaleDateString()}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900">
-                      <div className="flex items-center mb-1">
-                        <Mail className="h-3 w-3 text-gray-400 mr-1" />
-                        {customer.email}
-                      </div>
-                      <div className="flex items-center">
-                        <Phone className="h-3 w-3 text-gray-400 mr-1" />
-                        {customer.phone}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900">
-                      <div className="flex items-center">
-                        <MapPin className="h-3 w-3 text-gray-400 mr-1" />
-                        {customer.city}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    <div className="font-medium">{customer.totalOrders}</div>
-                    <div className="text-xs text-gray-500">
-                      Last: {customer.lastOrderDate ? new Date(customer.lastOrderDate).toLocaleDateString() : 'Never'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                    ${(customer.totalSpent || 0).toLocaleString()}
-                    <div className="text-xs text-gray-500">
-                      {customer.loyaltyPoints} points
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                    <div className="flex items-center">
-                      <Wallet className="h-4 w-4 text-orange-500 mr-1" />
-                      <span className={customer.creditBalance > 0 ? "text-green-600" : "text-gray-500"}>
-                        ${customer.creditBalance.toFixed(2)}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => handleManageCredit(customer)}
-                      className="text-xs text-indigo-600 hover:text-indigo-800 mt-1"
-                    >
-                      Manage Credit
-                    </button>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(customer.status)}`}>
-                      {getStatusIcon(customer.status)}
-                      <span className="ml-1">
-                        {customer.status === "vip" ? "VIP" : customer.status.charAt(0).toUpperCase() + customer.status.slice(1)}
-                      </span>
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    <div className="flex items-center space-x-2">
-                      <button 
-                        onClick={() => handleViewDetails(customer)}
-                        className="text-indigo-600 hover:text-indigo-900 p-1 hover:bg-indigo-50 rounded"
-                        title="View Details"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button 
+                      <button
                         onClick={() => handleManageCredit(customer)}
-                        className="text-orange-600 hover:text-orange-900 p-1 hover:bg-orange-50 rounded"
-                        title="Manage Credit"
+                        className="text-xs text-indigo-600 hover:text-indigo-800 mt-1"
                       >
-                        <CreditCard className="h-4 w-4" />
+                        Manage Credit
                       </button>
-                      <button 
-                        onClick={() => handleEditCustomer(customer)}
-                        className="text-gray-600 hover:text-gray-900 p-1 hover:bg-gray-50 rounded"
-                        title="Edit Customer"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteCustomer(customer)}
-                        className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded"
-                        title="Delete Customer"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                      <button className="text-gray-600 hover:text-gray-900 p-1 hover:bg-gray-50 rounded">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Empty State */}
-        {filteredCustomers.length === 0 && (
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      <div className="flex items-center space-x-2">
+                        <button 
+                          onClick={() => handleViewDetails(customer)}
+                          className="text-indigo-600 hover:text-indigo-900 p-1 hover:bg-indigo-50 rounded"
+                          title="View Details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleManageCredit(customer)}
+                          className="text-orange-600 hover:text-orange-900 p-1 hover:bg-orange-50 rounded"
+                          title="Manage Credit"
+                        >
+                          <CreditCard className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleEditCustomer(customer)}
+                          className="text-gray-600 hover:text-gray-900 p-1 hover:bg-gray-50 rounded"
+                          title="Edit Customer"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteCustomer(customer)}
+                          className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded"
+                          title="Delete Customer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                        <button className="text-gray-600 hover:text-gray-900 p-1 hover:bg-gray-50 rounded">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
           <div className="text-center py-12">
             <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No customers found</h3>
-            <p className="text-gray-500">Try adjusting your search or filter criteria</p>
+            <p className="text-gray-500">Get started by adding your first customer or connecting your database</p>
           </div>
         )}
       </div>
-
-      {/* Pagination */}
-      {filteredCustomers.length > 0 && (
-        <div className="bg-white px-4 py-3 border border-gray-200 rounded-lg flex items-center justify-between">
-          <div className="flex-1 flex justify-between sm:hidden">
-            <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-              Previous
-            </button>
-            <button className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-              Next
-            </button>
-          </div>
-          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-gray-700">
-                Showing <span className="font-medium">1</span> to <span className="font-medium">{filteredCustomers.length}</span> of{' '}
-                <span className="font-medium">{filteredCustomers.length}</span> results
-              </p>
-            </div>
-            <div>
-              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                <button className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                  Previous
-                </button>
-                <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-indigo-50 text-sm font-medium text-indigo-600">
-                  1
-                </button>
-                <button className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                  Next
-                </button>
-              </nav>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Add Customer Form */}
       <AddCustomerForm
@@ -676,6 +579,18 @@ export default function CustomersPage() {
         onSubmit={handleAddCustomer}
       />
 
+      {/* Edit Customer Form */}
+      <EditCustomerForm
+        isOpen={showEditForm}
+        onClose={() => {
+          setShowEditForm(false);
+          setSelectedCustomer(null);
+        }}
+        onSubmit={handleUpdateCustomer}
+        customer={selectedCustomer}
+      />
+
+      {/* Customer Details Modal */}
       {showDetailsModal && selectedCustomer && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
@@ -771,6 +686,73 @@ export default function CustomersPage() {
                   className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
                 >
                   Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedCustomer && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            {/* Header */}
+            <div className="flex justify-between items-center p-6 border-b border-gray-200">
+              <h2 className="text-lg font-bold text-gray-900 flex items-center">
+                <Trash2 className="h-5 w-5 mr-2 text-red-500" />
+                Delete Customer
+              </h2>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setSelectedCustomer(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <p className="text-gray-700 mb-4">
+                Are you sure you want to delete this customer? This action cannot be undone.
+              </p>
+
+              {/* Customer Info */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                <div className="flex items-start space-x-3">
+                  <div className="bg-red-100 p-2 rounded-lg">
+                    <User className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-medium text-gray-900">{selectedCustomer.name}</h4>
+                    <p className="text-sm text-gray-600">Email: {selectedCustomer.email}</p>
+                    <p className="text-sm text-gray-600">Phone: {selectedCustomer.phone}</p>
+                    <p className="text-sm text-gray-600">Orders: {selectedCustomer.totalOrders}</p>
+                    <p className="text-sm text-gray-600">Total Spent: ${selectedCustomer.totalSpent.toFixed(2)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setSelectedCustomer(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteCustomer}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Customer
                 </button>
               </div>
             </div>

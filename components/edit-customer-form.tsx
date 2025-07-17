@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   X, 
   Save, 
@@ -10,9 +10,16 @@ import {
   MapPin,
   CreditCard
 } from "lucide-react";
-import { AddCustomerFormProps, CustomerFormData } from "@/types/customer";
+import { Customer, CustomerFormData } from "@/types/customer";
 
-export default function AddCustomerForm({ isOpen, onClose, onSubmit }: AddCustomerFormProps) {
+interface EditCustomerFormProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (customerData: CustomerFormData) => void;
+  customer: Customer | null;
+}
+
+export default function EditCustomerForm({ isOpen, onClose, onSubmit, customer }: EditCustomerFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -24,6 +31,21 @@ export default function AddCustomerForm({ isOpen, onClose, onSubmit }: AddCustom
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Populate form when customer changes
+  useEffect(() => {
+    if (customer) {
+      setFormData({
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        address: customer.address,
+        city: customer.city,
+        creditBalance: customer.creditBalance.toString()
+      });
+      setErrors({});
+    }
+  }, [customer]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -85,7 +107,6 @@ export default function AddCustomerForm({ isOpen, onClose, onSubmit }: AddCustom
     setIsSubmitting(true);
     
     try {
-      // Prepare customer data
       const customerData: CustomerFormData = {
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
@@ -96,39 +117,20 @@ export default function AddCustomerForm({ isOpen, onClose, onSubmit }: AddCustom
       };
 
       onSubmit(customerData);
-      
-      // Reset form
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        address: "",
-        city: "",
-        creditBalance: "0.00"
-      });
-      
       onClose();
     } catch (error) {
-      console.error("Error adding customer:", error);
+      console.error("Error updating customer:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleClose = () => {
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      address: "",
-      city: "",
-      creditBalance: "0.00"
-    });
     setErrors({});
     onClose();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !customer) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -137,7 +139,7 @@ export default function AddCustomerForm({ isOpen, onClose, onSubmit }: AddCustom
         <div className="flex justify-between items-center p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900 flex items-center">
             <User className="h-5 w-5 mr-2" />
-            Add New Customer
+            Edit Customer
           </h2>
           <button
             onClick={handleClose}
@@ -259,35 +261,32 @@ export default function AddCustomerForm({ isOpen, onClose, onSubmit }: AddCustom
             </div>
           </div>
 
-          {/* Customer Settings */}
+          {/* Credit Balance */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Customer Settings</h3>
+            <h3 className="text-lg font-medium text-gray-900">Account Settings</h3>
             
-            <div className="grid grid-cols-1 gap-4">
-              {/* Initial Credit Balance */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <CreditCard className="h-4 w-4 inline mr-1" />
-                  Initial Credit Balance
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                  <input
-                    type="number"
-                    name="creditBalance"
-                    value={formData.creditBalance}
-                    onChange={handleInputChange}
-                    step="0.01"
-                    min="0"
-                    className={`w-full pl-8 pr-4 p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                      errors.creditBalance ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="0.00"
-                    disabled={isSubmitting}
-                  />
-                </div>
-                {errors.creditBalance && <p className="mt-1 text-sm text-red-600">{errors.creditBalance}</p>}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <CreditCard className="h-4 w-4 inline mr-1" />
+                Credit Balance
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                <input
+                  type="number"
+                  name="creditBalance"
+                  value={formData.creditBalance}
+                  onChange={handleInputChange}
+                  step="0.01"
+                  min="0"
+                  className={`w-full pl-8 pr-4 p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                    errors.creditBalance ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="0.00"
+                  disabled={isSubmitting}
+                />
               </div>
+              {errors.creditBalance && <p className="mt-1 text-sm text-red-600">{errors.creditBalance}</p>}
             </div>
           </div>
 
@@ -309,12 +308,12 @@ export default function AddCustomerForm({ isOpen, onClose, onSubmit }: AddCustom
               {isSubmitting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Adding...
+                  Updating...
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Add Customer
+                  Update Customer
                 </>
               )}
             </button>

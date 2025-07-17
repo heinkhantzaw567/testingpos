@@ -6,16 +6,14 @@ export interface Customer {
   phone: string;
   address: string;
   city: string;
-  zipCode: string;
-  status: "active" | "inactive" | "vip";
-  creditBalance: number;
+  totalOrders: number;
+  totalSpent: number;
+  lastOrderDate: string | null;
   dateAdded: string;
-  // Additional fields for customer management
-  totalOrders?: number;
-  totalSpent?: number;
-  lastOrderDate?: string;
-  loyaltyPoints?: number;
-  avatar?: string;
+  loyaltyPoints: number;
+  creditBalance: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // Simplified customer for forms/order selection
@@ -34,9 +32,7 @@ export interface CustomerFormData {
   phone: string;
   address: string;
   city: string;
-  zipCode: string;
-  status: "active" | "inactive" | "vip";
-  creditBalance: number;
+  creditBalance?: number;
 }
 
 // Customer form props
